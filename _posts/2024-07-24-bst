@@ -1,0 +1,291 @@
+---
+layout:     post
+title:      "二分查找树(BST)的实现-查找、插入、删除操作"
+subtitle:   ""
+date:       2024-07-24 06:00:00
+author:     "西米屋花火"
+catalog: true
+tags:
+    - 二叉树
+    - 数据结构
+---
+
+## 注：
+
+一、此案例的[删除操作](https://so.csdn.net/so/search?q=%E5%88%A0%E9%99%A4%E6%93%8D%E4%BD%9C\&spm=1001.2101.3001.7020)
+
+①使用[递归函数](https://so.csdn.net/so/search?q=%E9%80%92%E5%BD%92%E5%87%BD%E6%95%B0\&spm=1001.2101.3001.7020)
+
+②优先减少高度更高的子树，涉及中序前驱（inorder predecessor）中序后继（inorder successor）。
+
+二、[树的节点](https://so.csdn.net/so/search?q=%E6%A0%91%E7%9A%84%E8%8A%82%E7%82%B9\&spm=1001.2101.3001.7020)包含key与value，value为泛型。
+
+## BST.h
+
+```cpp
+#pragma once
+#include <iostream>
+using namespace std;
+template<typename T>
+struct Node
+{
+	Node<T>* rchild = nullptr;
+	Node<T>* lchild = nullptr;
+	int key = 0;
+	T value = 0;
+};
+ 
+ 
+template<typename T>
+class BST
+{
+private:
+	Node<T>* root = nullptr;
+	Node<T>* find_node(int key);
+	void clear(Node<T>* node);
+public:
+	~BST();
+	T find(int key);
+	int height(Node<T>* root);
+ 
+	void insert(int key, T value);
+ 
+	void delete_(int key);
+	Node<T>* recursive_del(Node<T>* root, int key);
+ 
+ 
+	Node<T>* inorder_successor(Node<T>* node);
+	Node<T>* inorder_predecessor(Node<T>* node);
+ 
+	void preorder_traversal();
+	void preorder_traversal(Node<T>* node);
+ 
+	void inorder_traversal();
+	void inorder_traversal(Node<T>* node);
+};
+ 
+template<typename T>
+inline Node<T>* BST<T>::find_node(int key)
+{
+	Node<T>* p = root;
+	while (p != nullptr) {
+		if (key > p->key)
+			p = p->rchild;
+		else if (key < p->key)
+			p = p->lchild;
+		else
+			return p;
+	}
+	return nullptr;
+}
+ 
+template<typename T>
+inline void BST<T>::clear(Node<T>* node)
+{
+	if (node == nullptr) return;
+	clear(node->lchild);
+	clear(node->rchild);
+	delete node;
+}
+template<typename T>
+inline BST<T>::~BST()
+{
+	clear(root);
+}
+ 
+template<typename T>
+inline T BST<T>::find(int key)
+{
+	Node<T>* p = find_node(key);
+	if (p != nullptr) return p->value;
+	else return 0;
+}
+ 
+template<typename T>
+inline int BST<T>::height(Node<T>* root)
+{
+	if (root == nullptr) return 0;
+	int x, y;
+	x = height(root->lchild);
+	y = height(root->rchild);
+	return x > y ? x + 1 : y + 1;
+}
+ 
+template<typename T>
+inline void BST<T>::insert(int key, T value)
+{
+	if (root == nullptr) {
+		root = new Node<T>;
+		root->value = value;
+		root->key = key;
+		return;
+	}
+ 
+	Node<T>* p = root;
+	Node<T>* q = nullptr;
+	while (p != nullptr) {
+		q = p;
+		if (key > p->key)
+			p = p->rchild;
+		else if (key < p->key)
+			p = p->lchild;
+		else {
+			q = p;
+			break;
+		}
+	}
+	if (q == p) return;
+	Node<T>* new_node = new Node<T>;
+	new_node->value = value;
+	new_node->key = key;
+ 
+	if (q->key < key) q->rchild = new_node;
+	else q->lchild = new_node;
+ 
+	
+	
+}
+ 
+template<typename T>
+inline void BST<T>::delete_(int key)
+{
+	recursive_del(root, key);
+}
+ 
+template<typename T>
+inline Node<T>* BST<T>::recursive_del(Node<T>* root, int key)
+{
+	if (root == nullptr) return nullptr;
+	if (root->lchild == nullptr && root->rchild == nullptr) {
+		if (root == this->root) this->root = nullptr;
+		delete root;
+		return nullptr;
+	}
+ 
+	if (key < root->key) 
+		root->lchild = recursive_del(root->lchild, key);
+	else if (key > root->key) 
+		root->rchild = recursive_del(root->rchild, key);
+	else {
+		if (height(root->lchild) > height(root->rchild)) {
+			Node<T>* p = inorder_predecessor(root);
+			root->key = p->key;
+			root->value = p->value;
+			root->lchild = recursive_del(root->lchild, p->key);
+		}
+		else {
+			Node<T>* p = inorder_successor(root);
+			root->key = p->key;
+			root->value = p->value;
+			root->rchild = recursive_del(root->rchild, p->key);
+		}
+	}
+	return root;
+}
+ 
+ 
+template<typename T>
+inline Node<T>* BST<T>::inorder_successor(Node<T>* node)
+{
+	if (node->rchild == nullptr) return nullptr;
+ 
+	Node<T>* p = node->rchild;
+	Node<T>* q = nullptr;
+	while (p != nullptr) {
+		q = p;
+		p = p->lchild;
+	}
+	return q;
+}
+ 
+template<typename T>
+inline Node<T>* BST<T>::inorder_predecessor(Node<T>* node)
+{
+	if (node->lchild == nullptr) return nullptr;
+	
+	Node<T>* p = node->lchild;
+	Node<T>* q = nullptr;
+	while (p != nullptr) {
+		q = p;
+		p = p->rchild;
+	}
+	return q;
+}
+ 
+template<typename T>
+inline void BST<T>::preorder_traversal()
+{
+	cout << "preorder traversal:" << endl;
+	preorder_traversal(root);
+}
+ 
+template<typename T>
+inline void BST<T>::preorder_traversal(Node<T>* node)
+{
+	if (node != nullptr) {
+		cout << "(" << node->value << ", " << node->key << ")" << endl;
+		preorder_traversal(node->lchild);
+		preorder_traversal(node->rchild);
+	}
+}
+ 
+template<typename T>
+inline void BST<T>::inorder_traversal()
+{
+	cout << "inorder traversal:" << endl;
+	inorder_traversal(root);
+}
+ 
+template<typename T>
+inline void BST<T>::inorder_traversal(Node<T>* node)
+{
+	if (node != nullptr) {
+		inorder_traversal(node->lchild);
+		cout << "(" << node->value << ", " << node->key << ")" << endl;
+		inorder_traversal(node->rchild);
+	}
+}
+ 
+```
+
+## Main function
+
+```cpp
+#include <iostream>
+#include "BST.h"
+using namespace std;
+ 
+int main()
+{
+    BST<int> bst;
+ 
+    bst.insert(10, 10);
+    bst.insert(11, 11);
+    bst.insert(5, 5);
+    bst.insert(12, 12);
+    bst.insert(1, 1);
+    bst.insert(7, 7);
+    bst.insert(6, 6);
+    bst.insert(8, 8);
+    bst.insert(2, 2);
+    bst.insert(3, 3);
+	//至此记为tree A
+ 
+    bst.preorder_traversal();
+    bst.inorder_traversal();
+ 
+    bst.delete_(5);
+    bst.preorder_traversal();
+    bst.inorder_traversal();
+ 
+    bst.insert(5, 5);
+    bst.preorder_traversal();
+    bst.inorder_traversal();
+}
+```
+
+## 可视化
+
+下图为tree A
+
+![image](https://ximiwu.github.io/img/post-bst.png)
