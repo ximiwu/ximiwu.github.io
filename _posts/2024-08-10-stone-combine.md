@@ -100,7 +100,7 @@ int main() {
             f_min[i][j] = 1e8;
             f_max[i][j] = -1e8;
             for (int k = i; k < j; ++k){//极端情况：当len=2时，k=i，f[i][i]=0，符合题意。
-										//而k不能=j，因为f[j+1][j]无意义
+					//而k不能=j，因为f[j+1][j]无意义
                 f_min[i][j] = min(f_min[i][j], f_min[i][k] + f_min[k + 1][j] + a[j] - a[i - 1]);
                 f_max[i][j] = max(f_max[i][j], f_max[i][k] + f_max[k + 1][j] + a[j] - a[i - 1]);
             }
