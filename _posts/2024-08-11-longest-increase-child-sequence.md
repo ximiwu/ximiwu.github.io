@@ -56,6 +56,7 @@ tags:
 
 *   f\[i] = max(1, f\[k] + 1)
 *   (num\[k] < num\[i], 1 <= k < i)
+
 ## 题解
 ```cpp
 #include <iostream>
