@@ -19,7 +19,7 @@ tags:
 
 写一个程序来查找从最高点到底部任意处结束的路径，使路径经过数字的和最大。每一步可以走到左下方的点也可以到达右下方的点。
 
-![](https://cdn.luogu.com.cn/upload/image_hosting/95pzs0ne.png)
+![image](https://cdn.luogu.com.cn/upload/image_hosting/95pzs0ne.png)
 
 在上面的样例中，从 ***7 \to 3 \to 8 \to 7 \to 5*** 的路径产生了最大权值。
 
