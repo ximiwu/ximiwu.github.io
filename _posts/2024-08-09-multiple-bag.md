@@ -5,6 +5,7 @@ subtitle:   ""
 date:       2024-08-09 02:00:00
 author:     "西米屋花火"
 catalog: true
+header-img: "img/post-nana.jpg"
 tags:
     - 动态规划
     - 算法
