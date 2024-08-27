@@ -9,6 +9,7 @@ header-img: "img/post-nana.jpg"
 header-mask: 0.5
 tags:
     - 动态规划
+    - 多重背包问题
     - 算法
 ---
 
