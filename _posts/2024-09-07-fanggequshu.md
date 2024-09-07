@@ -2,7 +2,7 @@
 layout:     post
 title:      "线性DP：[NOIP2000 提高组] 方格取数"
 subtitle:   ""
-date:       2024-09-06 17:00:00
+date:       2024-09-07 17:00:00
 author:     "西米屋花火"
 catalog: true
 header-img: "img/post-nana.jpg"
