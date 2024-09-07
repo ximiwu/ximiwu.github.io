@@ -56,8 +56,8 @@ tags:
 
 注：本题解假设你已经看完
 
-*   [贪心：\[NOIP1999 提高组\] 导弹拦截](https://ximiwu.github.io/2024/09/02/daodanlanjie/)
-*   [贪心：最长公共子序列](https://ximiwu.github.io/2024/09/06/zuichanggonggongzixulie/)
+*   [贪心：\[NOIP1999 提高组\] 导弹拦截](https://blog.ximiwu.fun/2024/09/02/daodanlanjie/)
+*   [贪心：最长公共子序列](https://blog.ximiwu.fun/2024/09/06/zuichanggonggongzixulie/)
 
 ## 题解
 
