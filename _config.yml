@@ -5,7 +5,7 @@ header-img: img/home-bg.jpg
 email: 1720824788@qq.com
 description: "这里是 @西米屋花火 的个人博客"
 keyword: "西米屋花火, hanabi760, ximiwu, 西米屋花火的博客, ximiwu blog, 博客, 个人网站, 算法, 数据结构, acm, icpc, 信息竞赛, 竞争性编程"
-url: "https://huangxuan.me" # your host, for absolute URL
+url: "https://blog.ximiwu.fun" # your host, for absolute URL
 baseurl: "" # for example, '/blog' if your blog hosted on 'host/blog'
 
 # Publish posts or collection documents with a future date.
@@ -74,7 +74,7 @@ ga_domain: huangxuan.me
 
 # Sidebar settings
 sidebar: true # whether or not using Sidebar.
-sidebar-about-description: "(​ᗜ ˰ ​ᗜ) <br> "
+sidebar-about-description: "西米屋花火<br>广东工业大学<br>在校大一学生<br>QQ/WX：1720824788<br>(​ᗜ ˰ ​ᗜ) <br> "
 sidebar-avatar: https://pub-2cdda6f679704f75bf34b7caab2ad90c.r2.dev/QQ%E5%9B%BE%E7%89%8720240809115757.jpg # use absolute URL, seeing it's used in both `/` and `/about/`
 
 # Featured Tags
