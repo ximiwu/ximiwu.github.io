@@ -3,11 +3,32 @@
     @param {boolean} short
 {% endcomment %}
 
-{% if include.type == 'post' or include.type == 'page' %}
+{% if include.type == 'post' %}
+
 <style type="text/css">
     header.intro-header{
         position: relative;
-        background-image: url('{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}');
+        background-image: url('https://pub-2cdda6f679704f75bf34b7caab2ad90c.r2.dev/post-nana.jpg');
+        background: {{ page.header-bg-css }};
+    }
+
+    {% if page.header-mask %}
+    header.intro-header .header-mask{
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        background: rgba(0,0,0, {{ page.header-mask }});
+    }
+    {% endif %}
+</style>
+{% endif %}
+
+{% if include.type == 'page' %}
+
+<style type="text/css">
+    header.intro-header{
+        position: relative;
+        background-image: url('{{ page.header-img }}');
         background: {{ page.header-bg-css }};
     }
 
@@ -94,7 +115,7 @@
 {% endif %}
 
 {% if include.type == 'page' %}
-<header class="intro-header" style="background-image: url('{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}')">
+<header class="intro-header" style="background-image: url('{{ page.header-img }}')">
   <div class="header-mask"></div>
   <div class="container">
     <div class="row">
