@@ -1,1 +1,1 @@
-[ximiwu blog](blog.ximiwu.fun)
+[ximiwu blog](https://blog.ximiwu.fun)
