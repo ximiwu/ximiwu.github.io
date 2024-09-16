@@ -83,14 +83,7 @@ tags:
 
 于是我们得到了挤压变换矩阵
 
-$$
-\begin{pmatrix}
-n&0&0&0\\
-0&n&0&0\\
-0&0&n+f&-nf\\
-0&0&1&0\\
-\end{pmatrix}
-$$
+![16](https://pub-2abc7423feaa4ecb8f59a4cc2d6f2bc5.r2.dev/1-16.png)
 
 先进行挤压变换，再进行正交投影变换，就得到了透视投影变换
 
