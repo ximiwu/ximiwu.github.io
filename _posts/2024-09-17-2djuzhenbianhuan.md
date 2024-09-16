@@ -5,6 +5,7 @@ subtitle:   ""
 date:       2024-09-17 02:00:00
 author:     "西米屋花火"
 catalog: true
+header-mask: 0.5
 tags:
     - Games系列课程
     - Games101
