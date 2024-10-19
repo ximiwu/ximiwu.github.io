@@ -1,0 +1,513 @@
+---
+layout:     post
+title:      "d2l:09 Softmax 回归 + 损失函数 + 图片分类数据集"
+subtitle:   ""
+date:       2024-10-19 09:00:00
+author:     "西米屋花火"
+catalog: true
+header-mask: 0.5
+tags:
+    - dive into deep learning课程
+    - machine learning
+    - deep learning
+---
+
+## softmax
+
+![part-0_10_Page9](https://pub-27f4b2d9b5204bfa83968af5846efc8f.r2.dev/part-0_10_Page9.png)
+
+![part-0_10_Page10](https://pub-27f4b2d9b5204bfa83968af5846efc8f.r2.dev/part-0_10_Page10.png)
+
+## 损失函数
+
+![part-0_11_Page4](https://pub-27f4b2d9b5204bfa83968af5846efc8f.r2.dev/part-0_11_Page4.png)
+
+![part-0_11_Page2](https://pub-27f4b2d9b5204bfa83968af5846efc8f.r2.dev/part-0_11_Page2.png)
+
+![part-0_11_Page6](https://pub-27f4b2d9b5204bfa83968af5846efc8f.r2.dev/part-0_11_Page6.png)
+
+结合两者的优点：在0附近的梯度足够小，距离0较远时梯度为1，稳定
+
+## 图片分类数据集
+
+```python
+%matplotlib inline
+import torch
+import torchvision
+from torch.utils import data
+from torchvision import transforms
+from d2l import torch as d2l
+
+d2l.use_svg_display()
+```
+
+`%matplotlib inline` 只在Jupyter Notebook环境中有效，确保了 `plt.show()` 调用时，图形会直接显示在输出中，而不是打开一个新的窗口。
+
+
+```python
+trans = transforms.ToTensor()
+mnist_train = torchvision.datasets.FashionMNIST(
+    root = "../data", train = True, transform = trans, download = True
+)
+mnist_test = torchvision.datasets.FashionMNIST(
+    root = "../data", train = False, transform = trans, download = True
+)
+len(mnist_train), len(mnist_test)
+```
+
+
+    (60000, 10000)
+
+transforms.ToTensor()将PIL图像或NumPy数组转换成FloatTensor：
+
+像素值的范围从[0, 255]线性缩放到[0.0, 1.0]
+
+适用于多通道图像：可以处理单通道（灰度图像）和多通道（例如RGB彩色图像）图像。
+
+维度变换：对于PIL图像，转换后张量的维度是(C, H, W)，其中C是通道数，H是高度，W是宽度。对于NumPy数组，如果输入数组的维度是(H, W, C)，则会自动转换为(C, H, W)。
+
+
+```python
+mnist_train[0][0].shape
+```
+
+
+    torch.Size([1, 28, 28])
+
+意味着每个图像有1个通道，大小为28*28
+
+经过测试，发现mnist_train[i0]是第i个图像的信息，存储了一个1\*28\*28的矩阵
+
+mnist_train[i1]是第i个图像的类别，这个数据集有10种类别，即取值为0~9
+
+
+```python
+def get_fashion_mnist_labels(labels):
+    text_labels = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat',
+    'sandal', 'shirt', 'sneaker', 'bag', 'ankle boot']
+    return [text_labels[int(i)] for i in labels]
+```
+
+输入labels是一个列表，返回的也是一个列表
+
+
+```python
+def show_images(imgs, num_rows, num_cols, titles = None, scale = 1.5):
+    figsize = (num_cols * scale, num_rows * scale)
+    _, axes = d2l.plt.subplots(num_rows, num_cols, figsize = figsize)
+    axes = axes.flatten()
+    for i, (ax, img) in enumerate(zip(axes, imgs)):
+        if torch.is_tensor(img):
+            ax.imshow(img.numpy())
+        else:
+            ax.imshow(img)
+        ax.axes.get_xaxis().set_visible(False)
+        ax.axes.get_yaxis().set_visible(False)
+        if titles:
+            ax.set_title(titles[i])
+    return axes
+```
+
+通过 `figsize` 参数，你可以设置整个图形窗口的大小，单位为英寸。`figsize` 是一个元组，包含两个值：宽度和高度。
+
+`plt.subplots` 返回两个值：
+
+- 第一个值是图形对象（`figure`），代表整个图形窗口。
+- 第二个值是子图对象（`axes`）的数组。如果只创建一个子图，它将是一个单一的 `axes` 对象，而不是数组。
+
+创建多个子图时，axes对象是一个二维数组，其形状由你创建的子图的行数和列数决定。如果你创建了一个单行或单列的子图，`axes`将是一个一维数组。
+
+`axes.flatten()`是一个NumPy数组方法，它将一个多维数组“压平”（flatten）为一个一维数组（破坏列）。
+
+imshow()不支持tensor
+
+enumerate()额外返回了一个从0开始的记数
+
+ax.axes.get_xaxis().set_visible(False)设置坐标轴不可见
+
+
+```python
+X, y = next(iter(data.DataLoader(mnist_train, batch_size = 18)))
+show_images(X.reshape(18, 28, 28), 2 ,9, titles = get_fashion_mnist_labels(y));
+```
+
+X.shape == torch.Size([18, 1, 28, 28])
+
+ `imshow()` 期望输入的图像数据具有两个维度（对于灰度图像）或三个维度（对于RGB彩色图像）。一个形状为 `[1, 28, 28]` 的张量实际上是一个三维张量，因此需要reshape消除描述单通道的维度
+
+
+![svg](https://pub-27f4b2d9b5204bfa83968af5846efc8f.r2.dev/output_5_0.svg)
+    
+
+
+
+```python
+batch_size = 256
+def get_dataloader_workers():
+    return 16
+
+train_iter = data.DataLoader(mnist_train, batch_size, shuffle = True, 
+                            num_workers = get_dataloader_workers())
+timer = d2l.Timer()
+for X, y in train_iter:
+    continue
+f'{timer.stop():.2f} sec'
+
+
+```
+
+num_workers表示cpu核心数
+
+循环体的意图是测试读取数据的速度，读取的速度要快于训练的速度才行
+
+
+    '0.67 sec'
+
+
+
+
+```python
+def load_data_fashion_mnist(batch_size, resize = None):
+    trans = [transforms.ToTensor()]
+    if resize:
+        trans.insert(0, transforms.Resize(resize))
+    trans = transform.Compose(trans)
+    mnist_train = torchvision.datasets.FashionMNIST(
+    root = "../data", train = True, transform = trans, download = True
+)
+    mnist_test = torchvision.datasets.FashionMNIST(
+    root = "../data", train = False, transform = trans, download = True
+)
+    return (data.DataLoader(mnist_train, batch_size, shuffle = True,
+                           num_workers = get_dataloader_workers()),
+            data.DataLoader(mnist_test, batch_size, shuffle = False,
+                           num_workers = get_dataloader_workers()))
+
+```
+
+`transforms.Resize()` 可以对图像进行缩放，将其调整到指定的尺寸。
+
+`Compose(trans)`将一个transforms的操作列表组合形成一个操作
+
+## Softmax回归从零开始实现
+
+```python
+import torch
+from IPython import display
+from d2l import torch as d2l
+
+batch_size = 256
+train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size)
+```
+
+
+```python
+num_inputs = 784
+num_outputs = 10
+W = torch.normal(0, 0.01, size = (num_inputs, num_outputs), requires_grad = True)
+b = torch.zeros(num_outputs, requires_grad = True)
+```
+
+784是一个图像的像素点数，即神经网络输入内容的数量。10是10个类别的置信度，即神经网络输出内容的数量
+
+W把784个数据变换成了10个置信度
+
+b是偏移量
+
+W和b最初都是随机的，依靠sgd来训练
+
+
+```python
+def softmax(X):
+    X_exp = torch.exp(X)
+    partition = X_exp.sum(1, keepdim = True)
+    return X_exp / partition
+```
+
+X_exp把X的所有元素替换成e的指数
+
+partition把X_exp的列个数压缩为1
+
+返回的是一种满足概率性质的东西，即不为负，全部相加和为1
+
+
+```python
+def net(X):
+    return softmax(torch.matmul(X.reshape(-1, 784), W) + b)
+```
+
+神经网络
+
+X.shape == torch.Size([batchsize, 1, 28, 28])
+
+本人一开始很疑惑为什么能保证reshape后，784刚好装的就是28*28的内容，reshape难道发现了28\*28等于784吗
+
+torch在内存上存储数据的规则是行优先，例如torch.Size([z,y,x])，先存x个元素，然后考虑下一个y，再存x个元素。当y个x都被存完，考虑下一个z，再存y个x个元素。。。
+
+reshape会保持原始数据中的元素顺序不变，也就是说，不改变内存上的存储情况
+
+当执行reshape，-1的位置会被计算成batchsize，按照torch.Size([batchsize, 784])来读内存，先读784个元素，然后考虑下一个batchsize，再读784个元素。。。28*28的内容没有被拆散，符合预期
+
+这也解释了为什么有多个样本存在一个矩阵里时，表示样本index的维度应该放在最左边，因为这样reshape后可以直接用
+
+(batchsize,784)的矩阵 乘 (784, 10)的矩阵，变成了(batchsize,10个置信度)的矩阵，然后加上偏移量b，再进行softmax转化为符合概率的性质的玩意
+
+
+```python
+def cross_entropy(y_hat, y):
+    return -torch.log(y_hat[range(len(y_hat)), y])
+```
+
+交叉熵损失，衡量的是两个概率分布之间的差异性。
+
+(y_hat[range(len(y_hat)), y])返回了一个长度为len(y_hat)的tensor，代表当前index对应的样本的真实类别对应的预测概率
+
+也就是说，我们只关心真实类别对应的预测概率和1差了多少
+
+
+```python
+def accuracy(y_hat, y):
+    if len(y_hat.shape) > 1 and y_hat.shape[1] > 1:
+        y_hat = y_hat.argmax(axis = 1)
+    cmp = y_hat.type(y.dtype) == y
+    return float(cmp.type(y.dtype).sum())
+```
+
+y_hat.argmax(axis = 1)把列数量压缩为1，通过改写为一行元素中的最大值的方式
+
+cmp本来是bool列表，转成float再求和就变成了正确个数
+
+
+```python
+class Accumulator:
+    def __init__(self, n):
+        self.data = [0.0] * n
+    def add(self, *args):
+        self.data = [a + float(b) for a, b in zip(self.data, args)]
+    def __getitem__(self, idx):
+        return self.data[idx]
+        
+```
+
+
+
+
+```python
+def evaluate_accuracy(net, data_iter):
+    if isinstance(net, torch.nn.Module):
+        net.eval()
+    metric = Accumulator(2)
+    for X, y in data_iter:
+        metric.add(accuracy(net(X), y), y.numel())
+    return metric[0] / metric[1]
+```
+
+
+```python
+evaluate_accuracy(net, test_iter)
+```
+
+
+    0.1019
+
+
+
+
+```python
+def train_epoch_ch3(net, train_iter, loss, updater):
+    if isinstance(net, torch.nn.Module):
+        net.train()
+    metric = Accumulator(3)
+    for X, y in train_iter:
+        y_hat = net(X)
+        l = loss(y_hat, y)
+        if isinstance(updater, torch.optim.Optimizer):
+            updater.zero_grad()
+            l.mean().backward()
+            updater.step()
+        else:
+            l.sum().backward()
+            updater(X.shape[0])
+        metric.add(float(l.sum()), accuracy(y_hat, y), y.numel())
+    return metric[0] / metric[2], metric[1] / metric[2]
+```
+
+
+```python
+class Animator:  #@save
+    """在动画中绘制数据"""
+    def __init__(self, xlabel=None, ylabel=None, legend=None, xlim=None,
+                 ylim=None, xscale='linear', yscale='linear',
+                 fmts=('-', 'm--', 'g-.', 'r:'), nrows=1, ncols=1,
+                 figsize=(3.5, 2.5)):
+        # 增量地绘制多条线
+        if legend is None:
+            legend = []
+        d2l.use_svg_display()
+        self.fig, self.axes = d2l.plt.subplots(nrows, ncols, figsize=figsize)
+        if nrows * ncols == 1:
+            self.axes = [self.axes, ]
+        # 使用lambda函数捕获参数
+        self.config_axes = lambda: d2l.set_axes(
+            self.axes[0], xlabel, ylabel, xlim, ylim, xscale, yscale, legend)
+        self.X, self.Y, self.fmts = None, None, fmts
+
+    def add(self, x, y):
+        # 向图表中添加多个数据点
+        if not hasattr(y, "__len__"):
+            y = [y]
+        n = len(y)
+        if not hasattr(x, "__len__"):
+            x = [x] * n
+        if not self.X:
+            self.X = [[] for _ in range(n)]
+        if not self.Y:
+            self.Y = [[] for _ in range(n)]
+        for i, (a, b) in enumerate(zip(x, y)):
+            if a is not None and b is not None:
+                self.X[i].append(a)
+                self.Y[i].append(b)
+        self.axes[0].cla()
+        for x, y, fmt in zip(self.X, self.Y, self.fmts):
+            self.axes[0].plot(x, y, fmt)
+        self.config_axes()
+        display.display(self.fig)
+        display.clear_output(wait=True)
+```
+
+
+```python
+def train_ch3(net, train_iter, test_iter, loss, num_epochs, updater):
+    animator = Animator(xlabel='epoch', xlim=[0, num_epochs+1], ylim=[0.3, 0.9],
+                        legend=['train loss', 'train acc', 'test acc'])
+
+    for epoch in range(num_epochs):
+        train_metrics = train_epoch_ch3(net, train_iter, loss, updater)
+        test_acc = evaluate_accuracy(net, test_iter)
+        animator.add(epoch + 1, train_metrics + (test_acc,))
+    train_loss, train_acc = train_metrics
+    assert train_loss < 0.5, train_loss
+    assert train_acc <= 1 and train_acc > 0.7, train_acc
+    assert test_acc <= 1 and test_acc > 0.7, test_acc
+```
+
+
+```python
+lr = 0.1
+
+def updater(batch_size):
+    return d2l.sgd([W, b], lr, batch_size)
+```
+
+
+```python
+W = torch.normal(0, 0.01, size = (num_inputs, num_outputs), requires_grad = True)
+b = torch.zeros(num_outputs, requires_grad = True)
+num_epochs = 10
+train_ch3(net, train_iter, test_iter, cross_entropy, num_epochs, updater)
+```
+
+![svg](https://pub-27f4b2d9b5204bfa83968af5846efc8f.r2.dev/output_13_0.svg)
+
+## Softmax回归利用torch.nn实现
+
+```python
+import torch
+from torch import nn
+from d2l import torch as d2l
+
+batch_size = 256
+train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size)
+```
+
+
+```python
+net = nn.Sequential(nn.Flatten(), nn.Linear(784, 10))
+
+def init_weights(m):
+    if type(m) == nn.Linear:
+        nn.init.normal_(m.weight, std = 0.01)
+net.apply(init_weights)
+```
+
+
+    Sequential(
+      (0): Flatten(start_dim=1, end_dim=-1)
+      (1): Linear(in_features=784, out_features=10, bias=True)
+    )
+
+全连接层（nn.Linear），需要一维的输入数据。nn.Flatten 层会自动处理批次中的每个样本，将多维数据展平为一维
+
+nn.Flatten 层会默认保留输入张量的第一个维度，因为它被设计为处理批次数据，其中第一个维度代表批次大小（batch_size）。这是深度学习框架中的一个常见约定，旨在确保模型可以处理任意大小的批次，而不影响批次中的样本数量。
+
+
+```python
+loss = nn.CrossEntropyLoss()
+trainer = torch.optim.SGD(net.parameters(), lr = 0.1)
+```
+
+net.parameters() 会返回一个生成器，产生模型中所有参数的引用。这些参数是模型训练过程中需要优化的张量。
+
+
+```python
+def evaluate_accuracy(net, data_iter):
+    if isinstance(net, torch.nn.Module):
+        net.eval()
+    metric = d2l.Accumulator(2)
+    for X, y in data_iter:
+        metric.add(d2l.accuracy(net(X), y), y.numel())
+    return metric[0] / metric[1]
+```
+
+`net.eval()` 是一个用于将模型设置为评估模式的方法。这通常用于在测试或验证阶段告知模型
+
+
+```python
+def train_epoch_ch3(net, train_iter, loss, updater):
+    if isinstance(net, torch.nn.Module):
+        net.train()
+    metric = d2l.Accumulator(3)
+    for X, y in train_iter:
+        y_hat = net(X)
+        l = loss(y_hat, y)
+        if isinstance(updater, torch.optim.Optimizer):
+            updater.zero_grad()
+            l.mean().backward()
+            updater.step()
+        else:
+            l.sum().backward()
+            updater(X.shape[0])
+        metric.add(float(l.sum()), d2l.accuracy(y_hat, y), y.numel())
+    return metric[0] / metric[2], metric[1] / metric[2]
+```
+
+`net.train()` 是一个用于将模型设置为训练模式的方法。这个调用会递归地将模型内所有层的状态设置为训练模式。
+
+当你调用 `updater.step()` 时，优化器会根据之前累积的梯度（通过反向传播计算得到的）来更新模型的参数。
+
+
+```python
+def train_ch3(net, train_iter, test_iter, loss, num_epochs, updater):
+    animator = d2l.Animator(xlabel='epoch', xlim=[0, num_epochs+1], ylim=[0.3, 0.9],
+                        legend=['train loss', 'train acc', 'test acc'])
+
+    for epoch in range(num_epochs):
+        train_metrics = train_epoch_ch3(net, train_iter, loss, updater)
+        test_acc = evaluate_accuracy(net, test_iter)
+        animator.add(epoch + 1, train_metrics + (test_acc,))
+    train_loss, train_acc = train_metrics
+    assert train_loss < 0.5, train_loss
+    assert train_acc <= 1 and train_acc > 0.7, train_acc
+    assert test_acc <= 1 and test_acc > 0.7, test_acc
+```
+
+
+```python
+num_epochs = 10
+train_ch3(net, train_iter, test_iter, loss, num_epochs, trainer)
+```
+
+
+​    
+![svg](https://pub-27f4b2d9b5204bfa83968af5846efc8f.r2.dev/output_6_0.svg)
+​   
